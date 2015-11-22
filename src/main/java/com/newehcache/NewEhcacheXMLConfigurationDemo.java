@@ -23,8 +23,8 @@ public class NewEhcacheXMLConfigurationDemo {
 
     public static void main(String[] args) {
         try {
-            URL url = SimpleEhcacheDemo.class.getClassLoader().getResource("ehcache/newehcache.xml");
-            final CacheManager cacheManager = new EhcacheManager(new XmlConfiguration(url, SimpleEhcacheDemo.class.getClassLoader()));
+            URL url = NewEhcacheDefaultConfigurationDemo.class.getClassLoader().getResource("ehcache/newehcache.xml");
+            final CacheManager cacheManager = new EhcacheManager(new XmlConfiguration(url, NewEhcacheDefaultConfigurationDemo.class.getClassLoader()));
             cacheManager.init();
             final Cache<Integer, User> userCache = cacheManager.getCache("userCache", Integer.class, User.class);
 

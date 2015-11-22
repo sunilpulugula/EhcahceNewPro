@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ehcache:config
+        xmlns:ehcache="http://www.ehcache.org/v3"
+        xmlns:jcache="http://www.ehcache.org/v3/jsr107">
+
+    <!--<ehcache:service>
+        <ehcache:default-serializers>
+            <ehcache:serializer type="org.ehcache.spi.serialization.DefaultSerializationProvider"></ehcache:serializer>
+        </ehcache:default-serializers>
+    </ehcache:service>
+-->
+    <ehcache:cache-template name="myTemplate">
+        <ehcache:expiry>
+            <ehcache:tti unit="minutes">5</ehcache:tti>
+        </ehcache:expiry>
+        <ehcache:eviction-prioritizer>LRU</ehcache:eviction-prioritizer>
+        <ehcache:heap size="200" unit="entries"/>
+    </ehcache:cache-template>
+
+    <ehcache:cache alias="defaultCache" usesTemplate="myTemplate">
+        <ehcache:key-type copier="org.ehcache.internal.copy.SerializingCopier">java.lang.Integer</ehcache:key-type>
+        <ehcache:value-type copier="org.ehcache.internal.copy.SerializingCopier">com.newehcache.model.User
+        </ehcache:value-type>
+    </ehcache:cache>
+
+    <ehcache:cache alias="userCache" usesTemplate="myTemplate">
+        <ehcache:key-type copier="org.ehcache.internal.copy.SerializingCopier">java.lang.Integer</ehcache:key-type>
+        <ehcache:value-type copier="org.ehcache.internal.copy.SerializingCopier">com.newehcache.model.User
+        </ehcache:value-type>
+        <ehcache:expiry>
+            <ehcache:ttl unit="minutes">2</ehcache:ttl>
+        </ehcache:expiry>
+        <ehcache:eviction-veto>com.newehcache.evictionveto.UserEvictionVeto</ehcache:eviction-veto>
+        <ehcache:eviction-prioritizer>LFU</ehcache:eviction-prioritizer>
+        <ehcache:integration>
+            <ehcache:listener>
+                <ehcache:class>com.newehcache.listener.UserListener</ehcache:class>
+                <ehcache:eventFiringMode>SYNCHRONOUS</ehcache:eventFiringMode>
+                <ehcache:eventOrderingMode>ORDERED</ehcache:eventOrderingMode>
+                <ehcache:eventsToFireOn>CREATED</ehcache:eventsToFireOn>
+            </ehcache:listener>
+        </ehcache:integration>
+        <ehcache:heap size="500" unit="mb"></ehcache:heap>
+    </ehcache:cache>
+
+</ehcache:config>

@@ -11,11 +11,11 @@ import com.newehcache.model.User;
  */
 public class UserListener implements CacheEventListener {
 
-
     @Override
     public void onEvent(CacheEvent event) {
         Integer id = (Integer)event.getKey();
         User user = (User)event.getNewValue();
+        //do some work when event is triggered.
         if(user.getTenantid() > 50)
         {
             System.out.println("Listener invoked when adding user" + user.getUserid());
