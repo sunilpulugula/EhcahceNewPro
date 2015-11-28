@@ -1,19 +1,23 @@
 package com.newehcache;
 
-import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 import org.ehcache.Cache;
 import org.ehcache.CacheManager;
 import org.ehcache.CacheManagerBuilder;
 import org.ehcache.config.CacheConfigurationBuilder;
-import org.ehcache.config.ResourcePool;
-import org.ehcache.config.ResourcePools;
-import org.ehcache.config.ResourceType;
+import org.ehcache.config.Eviction;
+import org.ehcache.config.ResourcePoolsBuilder;
+import org.ehcache.config.SerializerConfiguration;
+import org.ehcache.config.serializer.DefaultSerializerConfiguration;
+import org.ehcache.config.units.EntryUnit;
 import org.ehcache.expiry.Duration;
 import org.ehcache.expiry.Expiry;
+import org.ehcache.internal.serialization.CompactJavaSerializer;
 
+import com.newehcache.evictionveto.UserEvictionVeto;
 import com.newehcache.model.User;
+import static org.junit.Assert.*;
 
 /**
  * @author <a href="mailto:sunil.pulugula@wavemaker.com">Sunil Kumar</a>
@@ -21,73 +25,61 @@ import com.newehcache.model.User;
  */
 public class NewEhcacheDefaultConfigurationDemo {
 
-    public static void main(String[] args) throws Exception{
+    public static void main(String[] args) throws Exception {
 
 
-        CacheConfigurationBuilder cacheConfigurationBuilder = CacheConfigurationBuilder.newCacheConfigurationBuilder();
+        // building cache configuration
+        CacheConfigurationBuilder<Integer,User> cacheConfigurationBuilder = CacheConfigurationBuilder.newCacheConfigurationBuilder();
         cacheConfigurationBuilder.withExpiry(new Expiry() {
             @Override
             public Duration getExpiryForCreation(Object key, Object value) {
-                return new Duration(300, TimeUnit.SECONDS);
+                return new Duration(120, TimeUnit.SECONDS);
             }
 
             @Override
             public Duration getExpiryForAccess(Object key, Object value) {
-                return null;
+                return new Duration(120, TimeUnit.SECONDS);
             }
 
             @Override
             public Duration getExpiryForUpdate(Object key, Object oldValue, Object newValue) {
                 return null;
             }
-        });
-        cacheConfigurationBuilder.withResourcePools(new ResourcePools() {
-            @Override
-            public ResourcePool getPoolForResource(ResourceType resourceType) {
-                return null;
-            }
+        })
+        .evictionVeto(new UserEvictionVeto())
+        .usingEvictionPrioritizer(Eviction.Prioritizer.LFU)
+        .withResourcePools(ResourcePoolsBuilder.newResourcePoolsBuilder().heap(200, EntryUnit.ENTRIES))
+         // adding defaultSerializer config service to configuration
+        .add(new DefaultSerializerConfiguration(CompactJavaSerializer.class, SerializerConfiguration.Type.KEY))
+        .buildConfig(Integer.class, User.class);
 
-            @Override
-            public Set<ResourceType> getResourceTypeSet() {
-                return null;
-            }
-        });
 
+        // building cache manager
         CacheManager cacheManager
                 = CacheManagerBuilder.newCacheManagerBuilder()
-                .withCache("preConfigured",
-                        CacheConfigurationBuilder.newCacheConfigurationBuilder()
-                                .buildConfig(Integer.class, User.class))
+                .withCache("userCache", cacheConfigurationBuilder.buildConfig(Integer.class, User.class))
                 .build(false);
         cacheManager.init();
 
         Cache<Integer, User> preConfigured =
-                cacheManager.getCache("preConfigured", Integer.class, User.class);
+                cacheManager.getCache("userCache", Integer.class, User.class);
 
-        preConfigured.put(1,new User(1,"user1","user1","admin",100));
-        preConfigured.put(2,new User(2,"user1","user1","student",101));
-        preConfigured.put(3,new User(3,"user1","user1","student",102));
+        User user1 = new User(1, "user1", "user1", "admin", 100);
+        User user2 = new User(2, "user1", "user1", "student", 101);
+        preConfigured.put(1, user1);
+        preConfigured.put(2, user2);
 
 
-        System.out.println(preConfigured.get(1).getUserid());
+        // asserting values from cache
+        assertEquals(user1,preConfigured.get(1));
+        assertEquals(user2,preConfigured.get(2));
 
+        //removing cache from EhcacheManager
         cacheManager.removeCache("preConfigured");
 
+        // Closing cache manager
         cacheManager.close();
 
-/*        URL url = SimpleEhcacheDemo.class.getClassLoader().getResource("ehcache/userCache.xml");
-        CacheManager cacheManager1 = new EhcacheManager(new XmlConfiguration(url,SimpleEhcacheDemo.class.getClassLoader()));
-        cacheManager1.init();
-        Cache<Integer, User> cache1 = cacheManager1.getCache("userCache2", Integer.class, User.class);
-        cache1.put(1,new User(1,"user1","user1","admin",30));
-        cache1.put(2,new User(2,"user1","user1","student",101));
-        cache1.put(3,new User(3,"user1","user1","student",102));
-
-
-        cache1.remove(1);
-        cache1.containsKey(1);
-        cache1.get(2);
-        cache1.clear();*/
     }
 
 }

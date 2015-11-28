@@ -8,7 +8,7 @@ import java.util.concurrent.TimeUnit;
 
 import org.ehcache.Cache;
 import org.ehcache.CacheManager;
-import org.ehcache.EhcacheManager;
+import org.ehcache.CacheManagerBuilder;
 import org.ehcache.config.xml.XmlConfiguration;
 
 import com.newehcache.model.User;
@@ -24,7 +24,8 @@ public class NewEhcacheXMLConfigurationDemo {
     public static void main(String[] args) {
         try {
             URL url = NewEhcacheDefaultConfigurationDemo.class.getClassLoader().getResource("ehcache/newehcache.xml");
-            final CacheManager cacheManager = new EhcacheManager(new XmlConfiguration(url, NewEhcacheDefaultConfigurationDemo.class.getClassLoader()));
+
+            final CacheManager cacheManager = CacheManagerBuilder.newCacheManager(new XmlConfiguration(url, NewEhcacheDefaultConfigurationDemo.class.getClassLoader()));
             cacheManager.init();
             final Cache<Integer, User> userCache = cacheManager.getCache("userCache", Integer.class, User.class);
 
